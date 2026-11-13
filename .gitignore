@@ -1,0 +1,25 @@
+# Secrets: API keys live in .env, which must never be committed.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local Python environment and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Output from scripts/fetch_test.py
+fetch_test_output/
+
+# Editor and OS clutter
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Clean copy made for uploading through the GitHub website
+github-upload/

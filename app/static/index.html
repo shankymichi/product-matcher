@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Same product, other shops</title>
+<style>
+  :root {
+    --page: #f6f4ef; --card: #ffffff; --ink: #1c1b18; --muted: #6a675f; --line: #dedad0;
+    --accent: #1f4fd8; --accent-ink: #ffffff;
+    --good: #17794a; --good-bg: #e6f4ec;
+    --warn: #96600a; --warn-bg: #fbf0d9;
+    --none: #5d5a53; --none-bg: #eceae4;
+    --bad: #b3261e; --bad-bg: #fbe9e7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #151412; --card: #1f1e1b; --ink: #f1eee7; --muted: #a7a399; --line: #38362f;
+      --accent: #8fb0ff; --accent-ink: #10131c;
+      --good: #6fd3a0; --good-bg: #16301f;
+      --warn: #f0be62; --warn-bg: #33270f;
+      --none: #b5b1a6; --none-bg: #2a2924;
+      --bad: #ff9d94; --bad-bg: #3a1715;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 800px; margin: 0 auto; padding: 48px 16px 64px; }
+  h1 { font-size: 30px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02em; }
+  .lede { color: var(--muted); margin: 0 0 28px; max-width: 60ch; }
+
+  form { display: flex; gap: 8px; flex-wrap: wrap; }
+  input[type=url] {
+    flex: 1 1 320px; min-width: 0; padding: 12px 14px; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  }
+  input[type=url]:focus-visible, button:focus-visible, a:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 2px;
+  }
+  button {
+    font: inherit; font-weight: 600; padding: 12px 20px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+  }
+  button[disabled] { opacity: .55; cursor: progress; }
+  button.quiet { background: transparent; color: var(--accent); }
+  .hint { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+
+  .ai { display: flex; gap: 12px; align-items: flex-start; margin: 16px 0 0; padding: 14px 16px;
+        background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+  .switch { position: relative; flex: none; width: 44px; height: 26px; margin-top: 1px; }
+  .switch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0;
+                  cursor: pointer; z-index: 1; }
+  .switch .track { position: absolute; inset: 0; border-radius: 999px; background: var(--line);
+                   transition: background .15s; }
+  .switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px;
+                          height: 20px; border-radius: 50%; background: var(--card);
+                          box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s; }
+  .switch input:checked + .track { background: var(--accent); }
+  .switch input:checked + .track::after { transform: translateX(18px); }
+  .switch input:focus-visible + .track { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .switch input:disabled { cursor: not-allowed; }
+  .switch input:disabled + .track { opacity: .5; }
+  .ai-text { min-width: 0; }
+  .ai-text label { font-weight: 600; cursor: pointer; }
+  .ai-text p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+  .ai-text code { font-size: 13px; background: var(--none-bg); padding: 1px 5px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) { .switch .track, .switch .track::after { transition: none; } }
+
+  .chips li.mode { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+  .chips li.mode.on { border-color: var(--accent); color: var(--accent); }
+  .product .note { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+  .product .note::before { content: "Note: "; font-weight: 600; }
+
+  .progress { margin: 28px 0 0; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%; flex: none;
+    border: 2px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+
+  .product { margin: 28px 0 0; padding: 18px 20px; background: var(--card);
+             border: 1px solid var(--line); border-radius: 14px; }
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+             color: var(--muted); margin: 0 0 6px; }
+  .product h2 { font-size: 17px; margin: 0 0 12px; line-height: 1.35; overflow-wrap: anywhere; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .chips li { font-size: 13px; padding: 3px 10px; border-radius: 999px;
+              background: var(--none-bg); color: var(--ink); }
+
+  .results { display: grid; gap: 14px; margin: 14px 0 0;
+             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+          padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .card .shop { font-size: 12px; font-weight: 700; letter-spacing: .08em;
+                text-transform: uppercase; color: var(--muted); margin: 0; }
+  .status { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 19px;
+            font-weight: 700; line-height: 1.25; }
+  .badge { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+  .badge svg { width: 18px; height: 18px; }
+  .card p { margin: 0; overflow-wrap: anywhere; }
+  .card .matched { font-size: 15px; }
+  .card .why, .card .note { font-size: 13px; color: var(--muted); }
+  .card .note::before { content: "Note: "; font-weight: 600; }
+  .card a.go { align-self: flex-start; margin-top: 4px; font-weight: 600; text-decoration: none;
+               padding: 9px 16px; border-radius: 10px; }
+
+  .in_stock { border-color: var(--good); }
+  .in_stock .badge { background: var(--good-bg); color: var(--good); }
+  .in_stock .status { color: var(--good); }
+  .in_stock a.go { background: var(--good); color: var(--card); }
+
+  .out_of_stock { border-color: var(--warn); border-style: solid; }
+  .out_of_stock .badge { background: var(--warn-bg); color: var(--warn); }
+  .out_of_stock .status { color: var(--warn); }
+  .out_of_stock a.go { border: 1px solid var(--warn); color: var(--warn); }
+
+  .not_listed { background: var(--none-bg); border-style: dashed; }
+  .not_listed .badge { background: var(--card); color: var(--none); }
+  .not_listed .status { color: var(--none); }
+
+  .could_not_check { border: 2px solid var(--bad); }
+  .could_not_check .badge { background: var(--bad-bg); color: var(--bad); }
+  .could_not_check .status { color: var(--bad); }
+
+  .loading .status { color: var(--muted); font-weight: 600; font-size: 16px; }
+
+  dialog { border: 2px solid var(--bad); border-radius: 14px; padding: 22px 24px; max-width: 460px;
+           width: calc(100% - 32px); background: var(--card); color: var(--ink); }
+  dialog::backdrop { background: rgba(0, 0, 0, .45); }
+  dialog h2 { margin: 0 0 6px; font-size: 19px; color: var(--bad); }
+  dialog p { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+  dialog ul { margin: 0 0 18px; padding: 0; list-style: none; display: grid; gap: 8px; }
+  dialog li { background: var(--bad-bg); border-radius: 10px; padding: 10px 12px; font-size: 15px;
+              overflow-wrap: anywhere; }
+  dialog li strong { display: block; }
+  dialog .actions { display: flex; gap: 8px; justify-content: flex-end; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Same product, other shops</h1>
+  <p class="lede">Paste an Amazon.in product link. You'll see whether the same product is in stock,
+    out of stock or not listed on the other platforms.</p>
+
+  <form id="form">
+    <input id="link" type="url" required autocomplete="off" inputmode="url"
+           placeholder="https://www.amazon.in/dp/…" aria-label="Amazon.in product link">
+    <button id="go" type="submit">Check</button>
+  </form>
+  <p class="hint">Works for smartphones, televisions, sneakers, and T-shirts, polos and jerseys.</p>
+
+  <div class="ai">
+    <span class="switch">
+      <input id="ai" type="checkbox" role="switch" aria-describedby="ai-help" disabled>
+      <span class="track" aria-hidden="true"></span>
+    </span>
+    <div class="ai-text">
+      <label for="ai">AI check</label>
+      <p id="ai-help">Checking whether it is available…</p>
+    </div>
+  </div>
+
+  <p class="progress" id="progress" role="status" hidden>
+    <span class="spinner" aria-hidden="true"></span><span id="progress-text"></span>
+  </p>
+
+  <section class="product" id="product" hidden aria-label="Amazon product">
+    <p class="eyebrow" id="product-category"></p>
+    <h2 id="product-title"></h2>
+    <ul class="chips" id="product-chips" aria-label="Matched on"></ul>
+    <div id="product-notes"></div>
+  </section>
+
+  <section class="results" id="results" aria-live="polite" aria-label="Results by platform"></section>
+</main>
+
+<dialog id="popup" aria-labelledby="popup-title">
+  <h2 id="popup-title">Could not check</h2>
+  <p>This is not the same as “not listed”: the check itself did not complete.</p>
+  <ul id="popup-list"></ul>
+  <div class="actions">
+    <button class="quiet" id="popup-close" type="button">Close</button>
+    <button id="popup-retry" type="button">Try again</button>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const form = $("form"), link = $("link"), go = $("go");
+  const progress = $("progress"), progressText = $("progress-text");
+  const product = $("product"), results = $("results");
+  const popup = $("popup"), popupList = $("popup-list");
+
+  const ICONS = {
+    in_stock: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>',
+    out_of_stock: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M5 15L15 5"/></svg>',
+    not_listed: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 10h10"/></svg>',
+    could_not_check: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l8 14H2z"/><path d="M10 8v4M10 14.6v.2"/></svg>',
+  };
+  const HEADLINE = {
+    in_stock: shop => `In stock on ${shop}`,
+    out_of_stock: shop => `On ${shop}, but out of stock`,
+    not_listed: shop => `${shop} does not list this product`,
+    could_not_check: shop => `Couldn't check ${shop}`,
+  };
+
+  let stream = null, lastUrl = "", lastAi = false, pending = 0;
+  const ai = $("ai"), aiHelp = $("ai-help");
+  let aiModel = "an AI model";
+  const AI_ON_TEXT = () => `On: names that are close but not identical are also checked by ${aiModel}. ` +
+    "Brand and required fields must still match exactly. Each lookup may use your API quota.";
+  const AI_OFF_TEXT = "Off: only exact name matches count. Turn on to let an AI model judge " +
+    "names that differ slightly, such as \u201cSmashic Sneakers\u201d vs \u201cSmashic Comfort Casual Sneakers\u201d.";
+
+  function remember(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+  function recall(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+
+  function describeAi() { aiHelp.textContent = ai.checked ? AI_ON_TEXT() : AI_OFF_TEXT; }
+
+  fetch("/config").then(r => r.json()).then(cfg => {
+    if (cfg.ai_available) {
+      const m = /\(([^)]+)\)/.exec(cfg.ai_label || "");
+      if (m) aiModel = m[1];
+      ai.disabled = false;
+      ai.checked = recall("ai-check") === "on";
+      describeAi();
+    } else {
+      ai.checked = false;
+      aiHelp.replaceChildren(
+        document.createTextNode("Not available: add "),
+        el("code", "", "GEMINI_API_KEY"),
+        document.createTextNode(" or "),
+        el("code", "", "ANTHROPIC_API_KEY"),
+        document.createTextNode(" to the .env file and restart the app."));
+    }
+  }).catch(() => { aiHelp.textContent = "Not available: could not read the app's settings."; });
+
+  ai.addEventListener("change", () => { remember("ai-check", ai.checked ? "on" : "off"); describeAi(); });
+
+  // All page data is written with textContent, never as HTML.
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function setBusy(busy, text) {
+    go.disabled = busy;
+    progress.hidden = !busy;
+    if (text) progressText.textContent = text;
+  }
+
+  function showPopup(shop, message) {
+    const item = el("li");
+    item.append(el("strong", "", shop), document.createTextNode(message));
+    popupList.append(item);
+    if (!popup.open) popup.showModal();
+  }
+
+  function loadingCard(name, label) {
+    const card = el("article", "card loading");
+    card.id = `card-${name}`;
+    const status = el("p", "status");
+    const spinner = el("span", "spinner");
+    spinner.setAttribute("aria-hidden", "true");
+    status.append(spinner, document.createTextNode(`Checking ${label}…`));
+    card.append(el("p", "shop", label), status);
+    return card;
+  }
+
+  function resultCard(r) {
+    const card = el("article", `card ${r.status}`);
+    card.id = `card-${r.platform}`;
+    const status = el("p", "status");
+    const badge = el("span", "badge");
+    badge.innerHTML = ICONS[r.status];             // fixed markup defined above
+    badge.setAttribute("aria-hidden", "true");
+    status.append(badge, document.createTextNode(HEADLINE[r.status](r.label)));
+    card.append(el("p", "shop", r.label), status);
+
+    if (r.matched_title) card.append(el("p", "matched", r.matched_title));
+    if (r.reasons && r.reasons.length)
+      card.append(el("p", "why", `Matched on: ${r.reasons.join(", ")}`));
+    (r.notes || []).forEach(note => card.append(el("p", "note", note)));
+    if (r.status === "could_not_check" && r.error) card.append(el("p", "why", r.error));
+    if (r.status === "not_listed")
+      card.append(el("p", "why", "The search ran, and nothing matched the brand, model and required fields."));
+
+    if (r.url && /^https:\/\//.test(r.url)) {
+      const a = el("a", "go", `View on ${r.label}`);
+      a.href = r.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+      card.append(a);
+    }
+    return card;
+  }
+
+  function onProduct(p) {
+    $("product-category").textContent = `Amazon · ${p.category}`;
+    $("product-title").textContent = p.title;
+    const chips = $("product-chips");
+    chips.replaceChildren();
+    [p.brand, p.model, ...(p.matched_on || [])].filter(Boolean)
+      .forEach(text => chips.append(el("li", "", text)));
+    const mode = el("li", p.matching === "Basic" ? "mode" : "mode on", `Matching: ${p.matching}`);
+    chips.append(mode);
+    $("product-notes").replaceChildren(...(p.notes || []).map(n => el("p", "note", n)));
+    product.hidden = false;
+
+    const shops = Object.entries(p.platforms || {});
+    pending = shops.length;
+    results.replaceChildren(...shops.map(([name, label]) => loadingCard(name, label)));
+    setBusy(true, `Checking ${shops.map(([, label]) => label).join(" and ")}…`);
+  }
+
+  function onResult(r) {
+    const card = resultCard(r), old = $(`card-${r.platform}`);
+    if (old) old.replaceWith(card); else results.append(card);
+    pending -= 1;
+    if (r.status === "could_not_check") showPopup(r.label, r.error || "The check did not complete.");
+  }
+
+  function finish() {
+    if (stream) { stream.close(); stream = null; }
+    setBusy(false);
+  }
+
+  function start(url, useAi) {
+    if (stream) stream.close();
+    lastUrl = url; lastAi = useAi;
+    product.hidden = true;
+    results.replaceChildren();
+    popupList.replaceChildren();
+    if (popup.open) popup.close();
+    setBusy(true, "Reading the Amazon page…");
+
+    let finished = false;
+    stream = new EventSource(`/check?url=${encodeURIComponent(url)}&ai=${useAi ? "true" : "false"}`);
+    stream.addEventListener("product", e => onProduct(JSON.parse(e.data)));
+    stream.addEventListener("result", e => onResult(JSON.parse(e.data)));
+    stream.addEventListener("failed", e => showPopup("Amazon link", JSON.parse(e.data).message));
+    stream.addEventListener("done", () => { finished = true; finish(); });
+    stream.onerror = () => {
+      if (finished) return;
+      finish();
+      showPopup("Connection", "Lost the connection to the app. Check that it is still running.");
+    };
+  }
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const url = link.value.trim();
+    if (url) start(url, ai.checked && !ai.disabled);
+  });
+  $("popup-close").addEventListener("click", () => popup.close());
+  $("popup-retry").addEventListener("click", () => { popup.close(); if (lastUrl) start(lastUrl, lastAi); });
+})();
+</script>
+</body>
+</html>
